@@ -43,25 +43,30 @@ php -S localhost:8000 -t public
 ### Via Web
 Acesse `http://localhost:8000` no seu navegador para usar o formulário de upload.
 
-### Via CLI (cli.sh)
+### Via CLI (Execução Remota)
 
-O projeto inclui um script auxiliar `cli.sh` para facilitar o uso via terminal:
+Você pode executar o CLI diretamente sem baixar nada, útil para servidores e automações rápidas:
 
 ```bash
-# Dar permissão de execução
-chmod +x cli.sh
-
 # Enviar texto
-./cli.sh -t "Seu texto aqui"
+bash <(curl -s "http://localhost:8000/cli.sh") -t "Olá Mundo"
 
-# Enviar arquivo
-./cli.sh -f caminho/do/arquivo.txt
+# Enviar um arquivo
+bash <(curl -s "http://localhost:8000/cli.sh") -f meu-arquivo.txt
 
 # Enviar via Pipe (stdin)
-cat logs.txt | ./cli.sh
+cat app.log | bash <(curl -s "http://localhost:8000/cli.sh")
+```
 
-# Especificar URL remota
-./cli.sh -u https://sua-instancia.com -t "Teste"
+### Via CLI (Local)
+
+Se preferir baixar o script:
+
+```bash
+curl -O http://localhost:8000/cli.sh
+chmod +x cli.sh
+
+./cli.sh -t "Texto local"
 ```
 
 ### Via curl (Direto)

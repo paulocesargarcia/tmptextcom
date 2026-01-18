@@ -20,6 +20,14 @@ $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 $host = $_SERVER['HTTP_HOST'];
 $baseUrl = "$protocol://$host";
 
+// --- CLI Script Serving ---
+if ($uri === '/cli.sh') {
+    header('Content-Type: text/x-shellscript');
+    $template = file_get_contents(__DIR__ . '/../src/cli.sh.template');
+    echo str_replace('DEFAULT_URL="http://localhost:8000"', 'DEFAULT_URL="' . $baseUrl . '"', $template);
+    exit;
+}
+
 // --- API/Upload Logic ---
 if (($uri === '/api/upload' || $uri === '/') && $method === 'POST') {
     $ip = Utils::getClientIP();
@@ -82,6 +90,7 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
     $meta = Storage::get($uuid);
     if (!$meta) {
         http_response_code(404);
+        include_once 'error404.php'; // I'll keep it simple for now and just echo
         echo "404 Not Found or Expired";
         exit;
     }
@@ -89,130 +98,191 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
     $ip = Utils::getClientIP();
     Logger::info("View: $uuid from $ip");
 
+    if (isset($_GET['download'])) {
+        header('Content-Type: ' . $meta['mime_type']);
+        header('Content-Disposition: attachment; filename="' . $meta['filename'] . '"');
+        echo $meta['content'];
+        exit;
+    }
+
     $mimeType = $meta['mime_type'];
     $content = $meta['content'];
+    $isImage = strpos($mimeType, 'image/') === 0;
+    $isText = strpos($mimeType, 'text/') === 0 || in_array($mimeType, ['application/json', 'application/javascript', 'application/xml']);
 
-    // If it's an image, show preview
-    if (strpos($mimeType, 'image/') === 0) {
-        ?>
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Preview - <?php echo Utils::escape($meta['filename']); ?></title>
-            <style>
-                body { background: #1e1e1e; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-                .info { position: absolute; top: 10px; left: 10px; font-family: sans-serif; opacity: 0.7; }
-            </style>
-        </head>
-        <body>
-            <div class="info">
-                <?php echo Utils::escape($meta['filename']); ?> (<?php echo $mimeType; ?>)<br>
-                Expires: <?php echo date('Y-m-d H:i', $meta['expires_at']); ?>
-            </div>
-            <img src="data:<?php echo $mimeType; ?>;base64,<?php echo base64_encode($content); ?>">
-        </body>
-        </html>
-        <?php
-        exit;
-    }
-
-    // If it's text or code
-    if (strpos($mimeType, 'text/') === 0 || $mimeType === 'application/json' || $mimeType === 'application/javascript' || $mimeType === 'application/xml') {
-        ?>
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title><?php echo Utils::escape($meta['filename']); ?></title>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-            <script>hljs.highlightAll();</script>
-            <style>
-                body { background: #0d1117; color: #c9d1d9; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; margin: 0; padding: 20px; }
-                pre { background: #161b22; padding: 16px; border-radius: 6px; overflow: auto; line-height: 1.45; }
-                code { font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; font-size: 85%; }
-                .meta { margin-bottom: 20px; font-size: 0.9em; opacity: 0.8; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="meta">
-                <strong>File:</strong> <?php echo Utils::escape($meta['filename']); ?> |
-                <strong>Type:</strong> <?php echo $mimeType; ?> |
-                <strong>Expires:</strong> <?php echo date('Y-m-d H:i', $meta['expires_at']); ?> |
-                <a href="?download=1" style="color: #58a6ff;">Download Raw</a>
-            </div>
-            <?php if (isset($_GET['download'])): ?>
-                <?php
-                header('Content-Type: ' . $mimeType);
-                header('Content-Disposition: attachment; filename="' . $meta['filename'] . '"');
-                echo $content;
-                exit;
-                ?>
-            <?php endif; ?>
-            <pre><code><?php echo Utils::escape($content); ?></code></pre>
-        </body>
-        </html>
-        <?php
-        exit;
-    }
-
-    // Default: Download
-    header('Content-Type: ' . $mimeType);
-    header('Content-Disposition: attachment; filename="' . $meta['filename'] . '"');
-    echo $content;
-    exit;
-}
-
-// --- Frontend logic (if no UUID matched and not a POST) ---
-if ($uri === '/') {
     ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Text & File Storage</title>
+        <title><?php echo Utils::escape($meta['filename']); ?> - TmpText</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
         <style>
-            body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; background: #f4f4f9; }
-            .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            h1 { margin-top: 0; color: #333; }
-            textarea { width: 100%; height: 200px; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-            .form-group { margin-bottom: 20px; }
-            input[type="file"] { display: block; margin-bottom: 10px; }
-            button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
-            button:hover { background: #0056b3; }
-            .footer { margin-top: 30px; font-size: 0.8em; color: #666; text-align: center; }
-            code { background: #eee; padding: 2px 4px; border-radius: 3px; }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+            body { font-family: 'Inter', sans-serif; }
         </style>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            border: "hsl(240 5.9% 90%)",
+                            input: "hsl(240 5.9% 90%)",
+                            ring: "hsl(240 5.9% 10%)",
+                            background: "hsl(0 0% 100%)",
+                            foreground: "hsl(240 10% 3.9%)",
+                            primary: {
+                                DEFAULT: "hsl(240 5.9% 10%)",
+                                foreground: "hsl(0 0% 98%)",
+                            },
+                            muted: {
+                                DEFAULT: "hsl(240 4.8% 95.9%)",
+                                foreground: "hsl(240 3.8% 46.1%)",
+                            },
+                        }
+                    }
+                }
+            }
+        </script>
     </head>
-    <body>
-        <div class="container">
-            <h1>Upload Text or File</h1>
-            <p>Temporary storage (7 days). No database. Public access via UUID.</p>
-
-            <form action="/" method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Paste text:</label>
-                    <textarea name="text" placeholder="Paste your logs or code here..."></textarea>
+    <body class="bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-50 min-h-screen flex flex-col">
+        <header class="border-b border-slate-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-10">
+            <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+                <a href="/" class="font-semibold text-lg tracking-tight">TmpText</a>
+                <div class="flex items-center gap-4 text-sm">
+                    <span class="text-slate-500 dark:text-zinc-400 hidden sm:inline">Expires: <?php echo date('Y-m-d H:i', $meta['expires_at']); ?></span>
+                    <a href="?download=1" class="bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 px-3 py-1.5 rounded-md font-medium hover:opacity-90 transition-opacity">Download</a>
                 </div>
-                <div class="form-group">
-                    <label>Or upload a file:</label>
-                    <input type="file" name="file">
-                </div>
-                <button type="submit">Upload & Get URL</button>
-            </form>
-
-            <div style="margin-top: 40px;">
-                <h3>CLI Usage (curl)</h3>
-                <pre><code># Upload raw text
-curl -X POST --data "hello world" <?php echo $baseUrl; ?>/api/upload
-
-# Upload a file
-curl -F "file=@path/to/file.txt" <?php echo $baseUrl; ?>/api/upload</code></pre>
             </div>
-        </div>
-        <div class="footer">
-            &copy; <?php echo date('Y'); ?> Temporary Storage. All files expire in 7 days.
+        </header>
+
+        <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold tracking-tight mb-1"><?php echo Utils::escape($meta['filename']); ?></h1>
+                <p class="text-sm text-slate-500 dark:text-zinc-400"><?php echo $mimeType; ?> • <?php echo strlen($content); ?> bytes</p>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+                <?php if ($isImage): ?>
+                    <div class="p-4 flex justify-center bg-slate-100 dark:bg-zinc-800/50">
+                        <img src="data:<?php echo $mimeType; ?>;base64,<?php echo base64_encode($content); ?>" class="max-w-full h-auto rounded-md shadow-lg border border-slate-200 dark:border-zinc-700">
+                    </div>
+                <?php elseif ($isText): ?>
+                    <pre class="p-0 m-0"><code class="hljs block p-6 !bg-transparent"><?php echo Utils::escape($content); ?></code></pre>
+                    <script>hljs.highlightAll();</script>
+                <?php else: ?>
+                    <div class="p-12 text-center">
+                        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-semibold">Binary File</h3>
+                        <p class="mt-1 text-sm text-slate-500">Preview not available for this file type.</p>
+                        <div class="mt-6">
+                            <a href="?download=1" class="inline-flex items-center rounded-md bg-zinc-900 dark:bg-zinc-50 px-3 py-2 text-sm font-semibold text-white dark:text-zinc-900 shadow-sm hover:opacity-90">Download Raw</a>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </main>
+
+        <footer class="border-t border-slate-200 dark:border-zinc-800 py-6 text-center text-sm text-slate-500 dark:text-zinc-500">
+            &copy; <?php echo date('Y'); ?> TmpText. Temporary storage.
+        </footer>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// --- Frontend logic (Home) ---
+if ($uri === '/') {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en" class="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TmpText - Temporary File & Text Storage</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            body { font-family: 'Inter', sans-serif; }
+        </style>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            background: "hsl(240 10% 3.9%)",
+                            foreground: "hsl(0 0% 98%)",
+                            primary: {
+                                DEFAULT: "hsl(0 0% 98%)",
+                                foreground: "hsl(240 5.9% 10%)",
+                            },
+                        }
+                    }
+                }
+            }
+        </script>
+    </head>
+    <body class="bg-zinc-950 text-zinc-50 min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="max-w-3xl w-full">
+            <header class="mb-12 text-center">
+                <h1 class="text-4xl font-bold tracking-tight mb-2">TmpText</h1>
+                <p class="text-zinc-400">Secure, temporary, database-less storage for your snippets and files.</p>
+            </header>
+
+            <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
+                <form action="/" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-zinc-300">Paste text content</label>
+                        <textarea name="text" placeholder="Paste your code, logs or notes here..."
+                            class="w-full h-48 bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-sm font-mono focus:ring-2 focus:ring-zinc-700 outline-none transition-all resize-none"></textarea>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4 border-t border-zinc-800">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="flex items-center gap-2 cursor-pointer bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Upload File</span>
+                                <input type="file" name="file" class="hidden" onchange="this.nextElementSibling.innerText = this.files[0].name">
+                                <span class="text-xs text-zinc-500 ml-2 italic truncate max-w-[100px]"></span>
+                            </label>
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto bg-zinc-50 text-zinc-950 px-6 py-2.5 rounded-lg font-semibold hover:bg-zinc-200 transition-colors">
+                            Save and Share
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                <div class="space-y-3">
+                    <h3 class="font-semibold text-zinc-300">Remote CLI</h3>
+                    <p class="text-zinc-500 leading-relaxed">Execute without installing. Just pipe your output or files.</p>
+                    <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800 font-mono text-[11px] overflow-x-auto">
+                        <span class="text-zinc-400">bash <(curl -s "<?php echo $baseUrl; ?>/cli.sh") -t "hello"</span>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="font-semibold text-zinc-300">Quick curl</h3>
+                    <p class="text-zinc-500 leading-relaxed">Direct API access for your scripts and automations.</p>
+                    <div class="bg-zinc-900 p-3 rounded-lg border border-zinc-800 font-mono text-[11px] overflow-x-auto">
+                        <span class="text-zinc-400">curl -F "file=@app.log" <?php echo $baseUrl; ?>/api/upload</span>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="mt-16 text-center text-xs text-zinc-600">
+                All files are encrypted on rest and deleted after 7 days. • Rate limited to 10/min per IP.
+            </footer>
         </div>
     </body>
     </html>
