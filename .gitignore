@@ -1,0 +1,8 @@
+storage/files/*
+storage/meta/*
+storage/logs/*
+storage/rate_limits/*
+!storage/files/.gitkeep
+!storage/meta/.gitkeep
+!storage/logs/.gitkeep
+!storage/rate_limits/.gitkeep
