@@ -1,66 +1,67 @@
-# Sistema de Armazenamento de Texto e Arquivos
+# TmpText - Almacenamiento Temporal de Archivos y Texto
 
-Um sistema simples e leve para compartilhamento temporário de textos (logs/código) e arquivos, desenvolvido em PHP sem a necessidade de banco de dados.
+Un sistema simple y liviano para compartir temporalmente textos (logs/código) y archivos, desarrollado en PHP sin necesidad de base de datos.
 
 ## 🚀 Funcionalidades
 
-- **Upload de texto ou arquivo**: Via web ou CLI (curl).
-- **URLs Únicas**: Geração de URL baseada em UUID.
-- **Preview Inteligente**:
-  - Syntax highlight para código e logs.
-  - Preview para imagens.
-  - Download direto para outros tipos de arquivo.
-- **Expiração Automática**: Os arquivos são removidos após 7 dias.
-- **Segurança**:
-  - Rate limit por IP (10 uploads por minuto).
-  - Proteção contra XSS.
-  - Armazenamento fora da raiz pública.
-- **Sem Banco de Dados**: Utiliza apenas o sistema de arquivos local.
+- **Subida de texto o archivo**: Vía web o CLI (curl/bash).
+- **URLs Únicas**: Generación de URL basada en UUID.
+- **Vista Previa Inteligente**:
+  - Syntax highlight para código y logs.
+  - Vista previa para imágenes.
+  - Descarga directa para otros tipos de archivo.
+- **Expiración Automática**: Los archivos se eliminan después de 7 días.
+- **Seguridad**:
+  - Límite de velocidad por IP (10 subidas por minuto).
+  - Protección contra XSS y CSRF.
+  - Límite de tamaño de archivo (5MB).
+  - Almacenamiento fuera de la raíz pública.
+- **Sin Base de Datos**: Utiliza solo el sistema de archivos local.
 
 ## 🛠️ Requisitos
 
-- PHP 7.4 ou superior.
-- Servidor Web (Apache, Nginx ou o servidor embutido do PHP).
+- PHP 7.4 o superior.
+- Servidor Web (Apache, Nginx o el servidor embebido de PHP).
 
-## 📥 Instalação
+## 📥 Instalación
 
-1. Clone o repositório:
+1. Clonar el repositorio:
    ```bash
-   git clone <url-do-repositorio>
-   cd <nome-do-diretorio>
+   git clone https://github.com/paulocesargarcia/tmptextcom
+   cd tmptextcom
    ```
 
-2. Certifique-se de que o diretório `storage` e seus subdiretórios tenham permissão de escrita para o usuário do servidor web.
+2. Asegurarse de que el directorio `storage` y sus subdirectorios tengan permisos de escritura para el usuario del servidor web.
 
-## 💻 Como usar
+## 💻 Cómo usar
 
-### Servidor de Desenvolvimento (PHP)
-Para rodar rapidamente:
+### Servidor de Desarrollo (PHP)
+Para ejecutar rápidamente:
 ```bash
-php -S localhost:8000 -t public
+php -S localhost:8000 -t public public/index.php
 ```
 
-### Via Web
-Acesse `http://localhost:8000` no seu navegador para usar o formulário de upload.
+### Vía Web
+Acceder a `http://localhost:8000` en tu navegador para usar el formulario de subida.
 
-### Via CLI (Execução Remota)
+### Vía CLI (Ejecución Remota)
 
-Você pode executar o CLI diretamente sem baixar nada, útil para servidores e automações rápidas:
+Podés ejecutar el CLI directamente sin descargar nada, útil para servidores y automatizaciones rápidas:
 
 ```bash
 # Enviar texto
-bash <(curl -s "http://localhost:8000/cli.sh") -t "Olá Mundo"
+bash <(curl -s "http://localhost:8000/cli.sh") -t "Hola Mundo"
 
-# Enviar um arquivo
-bash <(curl -s "http://localhost:8000/cli.sh") -f meu-arquivo.txt
+# Enviar un archivo
+bash <(curl -s "http://localhost:8000/cli.sh") -f mi-archivo.txt
 
-# Enviar via Pipe (stdin)
+# Enviar vía Pipe (stdin)
 cat app.log | bash <(curl -s "http://localhost:8000/cli.sh")
 ```
 
-### Via CLI (Local)
+### Vía CLI (Local)
 
-Se preferir baixar o script:
+Si preferís descargar el script:
 
 ```bash
 curl -O http://localhost:8000/cli.sh
@@ -69,24 +70,24 @@ chmod +x cli.sh
 ./cli.sh -t "Texto local"
 ```
 
-### Via curl (Direto)
+### Vía curl (Directo)
 
-Se preferir não usar o script:
+Si preferís no usar el script:
 
-**Texto:** `curl -X POST --data "texto" http://localhost:8000/api/upload`
+**Texto:** `curl -X POST --data "texto de prueba" http://localhost:8000/api/upload`
 
-**Arquivo:** `curl -F "file=@arq.txt" http://localhost:8000/api/upload`
+**Archivo:** `curl -F "file=@archivo.txt" http://localhost:8000/api/upload`
 
-## 📂 Estrutura do Projeto
+## 📂 Estructura del Proyecto
 
 ```
-/public    - Raiz do servidor web (index.php)
-/src       - Lógica do sistema (Classes PHP)
-/storage   - Arquivos armazenados, metadados e logs
+/public    - Raíz del servidor web (index.php)
+/src       - Lógica del sistema (Clases PHP y plantillas)
+/storage   - Archivos almacenados, metadados y logs
 ```
 
-## 🛡️ Segurança e Rate Limit
+## 🛡️ Seguridad y Autor
 
-- O sistema limita a **10 uploads por minuto por IP**.
-- Os logs de atividades podem ser encontrados em `storage/logs/app.log`.
-- Nenhuma execução de script é permitida nos arquivos enviados.
+- El sistema limita a **10 subidas por minuto por IP**.
+- Autor: **Paulo Cesar Garcia**
+- Repositorio: [https://github.com/paulocesargarcia/tmptextcom](https://github.com/paulocesargarcia/tmptextcom)

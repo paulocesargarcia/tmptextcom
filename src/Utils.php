@@ -31,4 +31,16 @@ class Utils {
         echo json_encode($data);
         exit;
     }
+
+    public static function generateCSRFToken() {
+        $ip = self::getClientIP();
+        $date = date('Y-m-d');
+        return hash_hmac('sha256', $ip . $date, CSRF_SECRET);
+    }
+
+    public static function validateCSRFToken($token) {
+        if (empty($token)) return false;
+        $expected = self::generateCSRFToken();
+        return hash_equals($expected, $token);
+    }
 }

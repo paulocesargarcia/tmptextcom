@@ -10,6 +10,8 @@ define('RATE_LIMITS_DIR', STORAGE_DIR . '/rate_limits');
 define('EXPIRATION_DAYS', 7);
 define('RATE_LIMIT_MAX', 10);
 define('RATE_LIMIT_WINDOW', 60); // seconds
+define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
+define('CSRF_SECRET', 'cambiar_este_secreto_en_produccion');
 
 // Ensure directories exist
 $dirs = [FILES_DIR, META_DIR, LOGS_DIR, RATE_LIMITS_DIR];
