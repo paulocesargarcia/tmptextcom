@@ -43,19 +43,34 @@ php -S localhost:8000 -t public
 ### Via Web
 Acesse `http://localhost:8000` no seu navegador para usar o formulário de upload.
 
-### Via CLI (curl)
+### Via CLI (cli.sh)
 
-**Enviar texto puro:**
+O projeto inclui um script auxiliar `cli.sh` para facilitar o uso via terminal:
+
 ```bash
-curl -X POST --data "Seu texto aqui" http://localhost:8000/api/upload
+# Dar permissão de execução
+chmod +x cli.sh
+
+# Enviar texto
+./cli.sh -t "Seu texto aqui"
+
+# Enviar arquivo
+./cli.sh -f caminho/do/arquivo.txt
+
+# Enviar via Pipe (stdin)
+cat logs.txt | ./cli.sh
+
+# Especificar URL remota
+./cli.sh -u https://sua-instancia.com -t "Teste"
 ```
 
-**Enviar um arquivo:**
-```bash
-curl -F "file=@caminho/do/arquivo.txt" http://localhost:8000/api/upload
-```
+### Via curl (Direto)
 
-A resposta será um JSON contendo o UUID, a URL pública e a data de expiração.
+Se preferir não usar o script:
+
+**Texto:** `curl -X POST --data "texto" http://localhost:8000/api/upload`
+
+**Arquivo:** `curl -F "file=@arq.txt" http://localhost:8000/api/upload`
 
 ## 📂 Estrutura do Projeto
 
