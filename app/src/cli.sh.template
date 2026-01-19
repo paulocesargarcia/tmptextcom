@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # URL por defecto
-DEFAULT_URL="http://localhost:8000"
+DEFAULT_URL="{{BASE_URL}}"
 URL=${STORAGE_URL:-$DEFAULT_URL}
 
 usage() {

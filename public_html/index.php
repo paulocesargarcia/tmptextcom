@@ -10,26 +10,36 @@ require_once __DIR__ . '/../app/src/Logger.php';
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Helper to get Base URL
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'];
+$scriptName = $_SERVER['SCRIPT_NAME'];
+$basePath = str_replace('\\', '/', dirname($scriptName));
+$basePath = ($basePath === '/' || $basePath === '.') ? '' : $basePath;
+$baseUrl = "$protocol://$host$basePath";
+
+// Relative URI for routing
+$relativeUri = $uri;
+if ($basePath !== '' && strpos($uri, $basePath) === 0) {
+    $relativeUri = substr($uri, strlen($basePath));
+}
+if ($relativeUri === '' || $relativeUri === false) $relativeUri = '/';
+
 // Cleanup occasionally (1% chance)
 if (rand(1, 100) === 1) {
     Storage::cleanup();
 }
 
-// Helper to get Base URL
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'];
-$baseUrl = "$protocol://$host";
-
 // --- CLI Script Serving ---
-if ($uri === '/cli.sh') {
+if ($relativeUri === '/cli.sh') {
     header('Content-Type: text/x-shellscript');
     $template = file_get_contents(__DIR__ . '/../app/src/cli.sh.template');
-    echo str_replace('DEFAULT_URL="http://localhost:8000"', 'DEFAULT_URL="' . $baseUrl . '"', $template);
+    echo str_replace('{{BASE_URL}}', $baseUrl, $template);
     exit;
 }
 
 // --- API/Upload Logic ---
-if (($uri === '/api/upload' || $uri === '/') && $method === 'POST') {
+if (($relativeUri === '/api/upload' || $relativeUri === '/') && $method === 'POST') {
     $ip = Utils::getClientIP();
     if (!RateLimiter::check($ip)) {
         Logger::error("Rate limit exceeded for IP: $ip");
@@ -99,7 +109,7 @@ if (($uri === '/api/upload' || $uri === '/') && $method === 'POST') {
 }
 
 // --- View/Download Logic ---
-$uuid = ltrim($uri, '/');
+$uuid = ltrim($relativeUri, '/');
 if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
     $meta = Storage::get($uuid);
     if (!$meta) {
@@ -214,7 +224,7 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
 }
 
 // --- Frontend logic (Home) ---
-if ($uri === '/') {
+if ($relativeUri === '/') {
     $ip = Utils::getClientIP();
     $csrf_token = Utils::generateCSRFToken();
     ?>
