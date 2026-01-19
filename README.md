@@ -40,7 +40,7 @@ php -S localhost:8000 -t public_html public_html/index.php
 ```
 
 ### Vía Web
-Acceder a `https://tu-dominio.com` en tu navegador para usar el formulario de subida.
+Acceder a `https://tmptext.com` en tu navegador para usar el formulario de subida.
 
 ### Vía CLI (Ejecución Remota)
 
@@ -48,13 +48,13 @@ Podés ejecutar el CLI directamente sin descargar nada, útil para servidores y 
 
 ```bash
 # Enviar texto
-bash <(curl -s "https://tu-dominio.com/cli.sh") -t "Hola Mundo"
+bash <(curl -s "https://tmptext.com/cli.sh") -t "Hola Mundo"
 
 # Enviar un archivo
-bash <(curl -s "https://tu-dominio.com/cli.sh") -f mi-archivo.txt
+bash <(curl -s "https://tmptext.com/cli.sh") -f mi-archivo.txt
 
 # Enviar vía Pipe (stdin)
-cat app.log | bash <(curl -s "https://tu-dominio.com/cli.sh")
+cat app.log | bash <(curl -s "https://tmptext.com/cli.sh")
 ```
 
 ### Vía CLI (Local)
@@ -62,7 +62,7 @@ cat app.log | bash <(curl -s "https://tu-dominio.com/cli.sh")
 Si preferís descargar el script:
 
 ```bash
-curl -O https://tu-dominio.com/cli.sh
+curl -O https://tmptext.com/cli.sh
 chmod +x cli.sh
 
 ./cli.sh -t "Texto local"
@@ -72,9 +72,9 @@ chmod +x cli.sh
 
 Si preferís no usar el script:
 
-**Texto:** `curl -X POST --data "texto de prueba" https://tu-dominio.com/api/upload`
+**Texto:** `curl -X POST --data "texto de prueba" https://tmptext.com/api/upload`
 
-**Archivo:** `curl -F "file=@archivo.txt" https://tu-dominio.com/api/upload`
+**Archivo:** `curl -F "file=@archivo.txt" https://tmptext.com/api/upload`
 
 ## 📂 Estructura del Proyecto
 
