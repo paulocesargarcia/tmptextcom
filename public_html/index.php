@@ -47,7 +47,7 @@ if (($relativeUri === '/api/upload' || $relativeUri === '/') && $method === 'POS
     }
 
     // CSRF Validation for web form
-    if ($uri === '/') {
+    if ($relativeUri === '/') {
         if (!Utils::validateCSRFToken($_POST['csrf_token'] ?? '')) {
             Logger::error("CSRF token validation failed for IP: $ip");
             Utils::jsonResponse(['error' => 'Validación de seguridad fallida.'], 403);
@@ -96,10 +96,10 @@ if (($relativeUri === '/api/upload' || $relativeUri === '/') && $method === 'POS
             'expires_at' => date('Y-m-d', $meta['expires_at'])
         ];
 
-        if (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false || $uri === '/api/upload') {
+        if (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false || $relativeUri === '/api/upload') {
             Utils::jsonResponse($response);
         } else {
-            header("Location: /{$meta['uuid']}");
+            header("Location: $baseUrl/{$meta['uuid']}");
             exit;
         }
     } else {
