@@ -28,7 +28,7 @@ Un sistema simple y liviano para compartir temporalmente textos (logs/código) y
 Este proyecto está diseñado para funcionar en entornos como cPanel donde los archivos del sistema se mantienen fuera de la carpeta pública por seguridad.
 
 1. Subí la carpeta `app` al directorio raíz de tu cuenta (un nivel antes de `public_html`).
-2. Copiá el contenido de la carpeta `public` (el archivo `index.php`) adentro de tu carpeta `public_html`.
+2. Copiá el contenido de la carpeta `public_html` (el archivo `index.php`) adentro de tu carpeta `public_html` del cPanel.
 3. Asegurate de que el directorio `app/storage` y sus subdirectorios tengan permisos de escritura (generalmente 755 o 777 dependiendo del servidor).
 
 ## 💻 Cómo usar
@@ -36,7 +36,7 @@ Este proyecto está diseñado para funcionar en entornos como cPanel donde los a
 ### Servidor de Desarrollo (PHP)
 Para ejecutar rápidamente desde la raíz del proyecto:
 ```bash
-php -S localhost:8000 -t public public/index.php
+php -S localhost:8000 -t public_html public_html/index.php
 ```
 
 ### Vía Web
@@ -79,10 +79,10 @@ Si preferís no usar el script:
 ## 📂 Estructura del Proyecto
 
 ```
-/app       - Lógica y almacenamiento (debe estar fuera de la raíz web)
-  /src     - Clases PHP y plantillas
-  /storage - Archivos almacenados, metadados e logs
-/public    - Raíz del servidor web (contiene solo index.php)
+/app          - Lógica y almacenamiento (debe estar fuera de la raíz web)
+  /src        - Clases PHP y plantillas
+  /storage    - Archivos almacenados, metadados e logs
+/public_html  - Raíz del servidor web (contiene solo index.php)
 ```
 
 ## 🛡️ Seguridad y Autor
