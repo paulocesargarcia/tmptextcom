@@ -23,20 +23,18 @@ Un sistema simple y liviano para compartir temporalmente textos (logs/código) y
 - PHP 7.4 o superior.
 - Servidor Web (Apache, Nginx o el servidor embebido de PHP).
 
-## 📥 Instalación
+## 📥 Instalación (cPanel)
 
-1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/paulocesargarcia/tmptextcom
-   cd tmptextcom
-   ```
+Este proyecto está diseñado para funcionar en entornos como cPanel donde los archivos del sistema se mantienen fuera de la carpeta pública por seguridad.
 
-2. Asegurarse de que el directorio `storage` y sus subdirectorios tengan permisos de escritura para el usuario del servidor web.
+1. Subí la carpeta `app` al directorio raíz de tu cuenta (un nivel antes de `public_html`).
+2. Copiá el contenido de la carpeta `public` (el archivo `index.php`) adentro de tu carpeta `public_html`.
+3. Asegurate de que el directorio `app/storage` y sus subdirectorios tengan permisos de escritura (generalmente 755 o 777 dependiendo del servidor).
 
 ## 💻 Cómo usar
 
 ### Servidor de Desarrollo (PHP)
-Para ejecutar rápidamente:
+Para ejecutar rápidamente desde la raíz del proyecto:
 ```bash
 php -S localhost:8000 -t public public/index.php
 ```
@@ -81,9 +79,10 @@ Si preferís no usar el script:
 ## 📂 Estructura del Proyecto
 
 ```
-/public    - Raíz del servidor web (index.php)
-/src       - Lógica del sistema (Clases PHP y plantillas)
-/storage   - Archivos almacenados, metadados y logs
+/app       - Lógica y almacenamiento (debe estar fuera de la raíz web)
+  /src     - Clases PHP y plantillas
+  /storage - Archivos almacenados, metadados e logs
+/public    - Raíz del servidor web (contiene solo index.php)
 ```
 
 ## 🛡️ Seguridad y Autor

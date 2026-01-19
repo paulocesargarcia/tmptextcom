@@ -1,10 +1,10 @@
 <?php
 
-require_once __DIR__ . '/../src/config.php';
-require_once __DIR__ . '/../src/Utils.php';
-require_once __DIR__ . '/../src/Storage.php';
-require_once __DIR__ . '/../src/RateLimiter.php';
-require_once __DIR__ . '/../src/Logger.php';
+require_once __DIR__ . '/../app/src/config.php';
+require_once __DIR__ . '/../app/src/Utils.php';
+require_once __DIR__ . '/../app/src/Storage.php';
+require_once __DIR__ . '/../app/src/RateLimiter.php';
+require_once __DIR__ . '/../app/src/Logger.php';
 
 // Simple Router
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -23,7 +23,7 @@ $baseUrl = "$protocol://$host";
 // --- CLI Script Serving ---
 if ($uri === '/cli.sh') {
     header('Content-Type: text/x-shellscript');
-    $template = file_get_contents(__DIR__ . '/../src/cli.sh.template');
+    $template = file_get_contents(__DIR__ . '/../app/src/cli.sh.template');
     echo str_replace('DEFAULT_URL="http://localhost:8000"', 'DEFAULT_URL="' . $baseUrl . '"', $template);
     exit;
 }

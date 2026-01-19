@@ -1,8 +1,8 @@
-storage/files/*
-storage/meta/*
-storage/logs/*
-storage/rate_limits/*
-!storage/files/.gitkeep
-!storage/meta/.gitkeep
-!storage/logs/.gitkeep
-!storage/rate_limits/.gitkeep
+app/storage/files/*
+app/storage/meta/*
+app/storage/logs/*
+app/storage/rate_limits/*
+!app/storage/files/.gitkeep
+!app/storage/meta/.gitkeep
+!app/storage/logs/.gitkeep
+!app/storage/rate_limits/.gitkeep
