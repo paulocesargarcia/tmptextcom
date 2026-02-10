@@ -108,9 +108,12 @@ if (($relativeUri === '/api/upload' || $relativeUri === '/') && $method === 'POS
     }
 }
 
-// --- View/Download Logic ---
-$uuid = ltrim($relativeUri, '/');
-if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
+// --- View/Download/Raw Logic ---
+$match = [];
+if (preg_match('#^/([a-f0-9-]{36})(?:/(raw|download))?$#', $relativeUri, $match)) {
+    $uuid = $match[1];
+    $mode = $match[2] ?? null;
+
     $meta = Storage::get($uuid);
     if (!$meta) {
         http_response_code(404);
@@ -121,9 +124,22 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
     $ip = Utils::getClientIP();
     Logger::info("View: $uuid from $ip");
 
-    if (isset($_GET['download'])) {
-        header('Content-Type: ' . $meta['mime_type']);
-        header('Content-Disposition: attachment; filename="' . $meta['filename'] . '"');
+    // Friendly download URL and legacy query ?download=1
+    if ($mode === 'download' || isset($_GET['download'])) {
+        $downloadMime = $meta['mime_type'] ?: 'application/octet-stream';
+        $downloadName = $meta['filename'] ?? $uuid;
+        header('Content-Type: ' . $downloadMime);
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        echo $meta['content'];
+        exit;
+    }
+
+    // Raw view
+    if ($mode === 'raw') {
+        $rawMime = $meta['mime_type'] ?: 'text/plain; charset=utf-8';
+        $rawName = $meta['filename'] ?? $uuid;
+        header('Content-Type: ' . $rawMime);
+        header('Content-Disposition: inline; filename="' . $rawName . '"');
         echo $meta['content'];
         exit;
     }
@@ -132,6 +148,9 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
     $content = $meta['content'];
     $isImage = strpos($mimeType, 'image/') === 0;
     $isText = strpos($mimeType, 'text/') === 0 || in_array($mimeType, ['application/json', 'application/javascript', 'application/xml']);
+
+    $downloadUrl = $baseUrl . '/' . $uuid . '/download';
+    $rawUrl = $baseUrl . '/' . $uuid . '/raw';
 
     ?>
     <!DOCTYPE html>
@@ -178,7 +197,8 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
                 <a href="/" class="font-semibold text-lg tracking-tight">TmpText</a>
                 <div class="flex items-center gap-4 text-sm">
                     <span class="text-slate-500 dark:text-zinc-400 hidden sm:inline">Vence: <?php echo date('Y-m-d H:i', $meta['expires_at']); ?></span>
-                    <a href="?download=1" class="bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 px-3 py-1.5 rounded-md font-medium hover:opacity-90 transition-opacity">Descargar</a>
+                    <a href="<?php echo $rawUrl; ?>" class="bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-zinc-50 px-3 py-1.5 rounded-md font-medium hover:opacity-90 transition-opacity">Raw</a>
+                    <a href="<?php echo $downloadUrl; ?>" class="bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 px-3 py-1.5 rounded-md font-medium hover:opacity-90 transition-opacity">Descargar</a>
                 </div>
             </div>
         </header>
@@ -205,7 +225,7 @@ if (preg_match('/^[a-f0-9-]{36}$/', $uuid)) {
                         <h3 class="mt-2 text-sm font-semibold">Archivo Binario</h3>
                         <p class="mt-1 text-sm text-slate-500">Vista previa no disponible para este tipo de archivo.</p>
                         <div class="mt-6">
-                            <a href="?download=1" class="inline-flex items-center rounded-md bg-zinc-900 dark:bg-zinc-50 px-3 py-2 text-sm font-semibold text-white dark:text-zinc-900 shadow-sm hover:opacity-90">Descargar Original</a>
+                            <a href="<?php echo $downloadUrl; ?>" class="inline-flex items-center rounded-md bg-zinc-900 dark:bg-zinc-50 px-3 py-2 text-sm font-semibold text-white dark:text-zinc-900 shadow-sm hover:opacity-90">Descargar Original</a>
                         </div>
                     </div>
                 <?php endif; ?>
